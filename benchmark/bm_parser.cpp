@@ -6,7 +6,21 @@
 
 #include "parser.hpp"
 
-static const std::vector<std::byte> &first_chunk()
+__attribute__((noinline))
+Message call_parse(ItchParser& parser, const std::byte* src) {
+    return parser.parseMsg(src);
+}
+
+class Handler {
+public:
+    void handle(Message msg) {
+        messages_num++;
+    }
+
+    long long messages_num = 0;
+};
+
+static const std::vector<std::byte>& first_chunk()
 {
     static std::vector<std::byte> buf = [] {
         std::ifstream file("../data/01302019.NASDAQ_ITCH50",
@@ -16,7 +30,7 @@ static const std::vector<std::byte> &first_chunk()
         }
 
         std::vector<std::byte> tmp(4096);
-        file.read(reinterpret_cast<char *>(tmp.data()),
+        file.read(reinterpret_cast<char*>(tmp.data()),
                   static_cast<std::streamsize>(tmp.size()));
         std::streamsize got = file.gcount();
         if (got <= 0) {
@@ -32,18 +46,51 @@ static void BM_ParseMsg(benchmark::State& state) {
     static const std::vector<std::byte> buf = first_chunk();
     ItchParser parser;
 
-    const std::byte* src = buf.data();
-    MessageType type;
+    const std::byte* vsrc = buf.data();
+
+    MessageType last_type = MessageType::SYSTEM_EVENT;
 
     for (auto _ : state) {
-        auto msg = parser.parseMsg(src);
+        auto msg = call_parse(parser, vsrc);
         benchmark::DoNotOptimize(msg);
-        type = msg.type;
-        benchmark::DoNotOptimize(type);
+        last_type = msg.type;
     }
 
-    std::cout << char(type) << '\n';
+    std::cout << char(last_type) << '\n';
     state.SetItemsProcessed(state.iterations());
 }
 
+static void BM_Parse(benchmark::State& state) {
+    std::ifstream file("../data/01302019.NASDAQ_ITCH50",
+                   std::ios::binary | std::ios::in);
+
+    if (!file) {
+        std::cerr << "Failed to open file\n";
+        return;
+    }
+
+    std::vector<std::byte> src_buf;
+    try {
+        src_buf.resize(1ull << 30);
+    } catch (const std::bad_alloc&) {
+        std::cerr << "Allocation failed\n";
+        return;
+    }
+
+    file.read(reinterpret_cast<char*>(src_buf.data()), src_buf.size());
+    std::size_t bytes_read = file.gcount();
+
+    const std::byte* src = src_buf.data();
+
+    ItchParser parser;
+    for (auto _ : state) {
+        Handler handler{};
+        parser.parse(src, 1 * 1024 * 1024 * 1024, handler);
+    }
+
+    state.SetBytesProcessed(1024 * 1024 * 1024);
+    state.SetItemsProcessed(state.iterations());
+}
+
+BENCHMARK(BM_Parse);
 BENCHMARK(BM_ParseMsg);

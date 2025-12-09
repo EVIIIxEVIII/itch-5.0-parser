@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <array>
+#include <vector>
 #include <cstdint>
 #include <memory.h>
 #include "parser.hpp"
@@ -17,8 +17,10 @@ inline uint64_t load_be48_v2(const std::byte* p) {
 class Handler {
 public:
     void handle(Message msg) {
-        std::cout << (char)msg.type << '\n';
+        messages_num++;
     }
+
+    long long messages_num = 0;
 };
 
 int main() {
@@ -30,21 +32,29 @@ int main() {
         return 1;
     }
 
-    std::array<std::byte, (1 * 1024 * 1024)> src_buf{};
+    std::vector<std::byte> src_buf;
+    try {
+        src_buf.resize(1ull << 30);
+    } catch (const std::bad_alloc&) {
+        std::cerr << "Allocation failed\n";
+        return 1;
+    }
+
     file.read(reinterpret_cast<char*>(src_buf.data()), src_buf.size());
     std::size_t bytes_read = file.gcount();
 
-    if (bytes_read == 0) {
-        std::cerr << "File empty or read failed\n";
-        return 1;
-    }
+    //if (bytes_read == 0) {
+    //    std::cerr << "File empty or read failed\n";
+    //    return 1;
+    //}
 
     const std::byte* src = src_buf.data();
 
     Handler handler{};
     ItchParser parser;
-    Message msg = parser.parseMsg(src);
-    std::cout << char(msg.type) << '\n';
+    parser.parse(src, 1 * 1024 * 1024 * 1024, handler);
+
+    std::cout << handler.messages_num << '\n';
 
     //const std::byte* msg = src;
     //uint16_t message_len = load_be16(msg);

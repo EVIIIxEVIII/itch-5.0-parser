@@ -280,7 +280,7 @@ struct Message {
         MarketParticipantPosition market_participant_pos;
         MwcbDeclineLevel mwcb_decline_level;
         MwcbStatus mwcb_status;
-        IPOQuotingPeriodUpd ipo_quoting_period_upd;
+        IPOQuotingPeriodUpd ipo_quotation_period_upd;
         LuldAuctionCollar luld_auction_collar;
         OperationalHalt operational_halt;
         AddOrderNoMpid add_order_no_mpid;
@@ -302,11 +302,8 @@ class ItchParser {
 public:
     template <typename Handler>
     void parse(std::byte const *  src, size_t len, Handler& handler);
-    Message parseMsg(std::byte const * stc);
+    Message parseMsg(std::byte const * src);
 };
-
-template <typename Handler>
-void parse(std::byte const *  src, size_t len, Handler& handler);
 
 inline uint64_t load_be48(const std::byte* p) {
     return (uint64_t(p[0]) << 40) |
@@ -372,7 +369,7 @@ inline StockDirectory parse_stock_directory(std::byte const * src) {
     src += 1;
     stockDir.issue_classification = static_cast<char>(src[0]);
     src += 1;
-    std::memcpy(&stockDir.issue_sub_type, src, 2);
+    std::memcpy(stockDir.issue_sub_type, src, 2);
     src += 2;
     stockDir.authenticity = static_cast<char>(src[0]);
     src += 1;
@@ -488,7 +485,7 @@ inline MwcbStatus parse_mwcb_status_message(std::byte const * src) {
     return mwcbStatus;
 }
 
-inline IPOQuotingPeriodUpd parse_ipo_quoting_period_upd(std::byte const * src) {
+inline IPOQuotingPeriodUpd parse_ipo_quotation_period_upd(std::byte const * src) {
     IPOQuotingPeriodUpd ipoQuotingPerUpd;
 
     ipoQuotingPerUpd.stock_locate = load_be16(src);
@@ -754,7 +751,7 @@ inline BrokenTrade parse_broken_trade(std::byte const * src) {
     brokenTrade.match_number = load_be64(src);
     src += 8;
 
-    return  brokenTrade;
+    return brokenTrade;
 }
 
 inline Noii parse_noii(std::byte const * src) {
@@ -859,7 +856,7 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
             break;
 
         case MessageType::IPO_QUOTING_PERIOD_UPD:
-            msg.ipo_quoting_period_upd = parse_ipo_quoting_period_upd(src);
+            msg.ipo_quotation_period_upd = parse_ipo_quotation_period_upd(src);
             break;
 
         case MessageType::LULD_AUCTION_COLLAR:
@@ -920,7 +917,6 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
 
         default:
             throw std::runtime_error("Unknown message type: " + std::to_string(raw_type));
-
     }
 
     return msg;
@@ -929,16 +925,16 @@ inline Message ItchParser::parseMsg(std::byte const * src) {
 template <typename Handler>
 void ItchParser::parse(std::byte const *  src, size_t len, Handler& handler) {
     std::byte const * end = src + len;
-    while (src < end) {
+
+    while (end - src >= 3) {
         uint16_t size = load_be16(src);
-        if (src + size >= end) {
+        if (end - src < 2 + size) {
             break;
         }
 
         Message msg = parseMsg(src);
         handler.handle(msg);
 
-        src += 2;
-        src += msg.size;
+        src += msg.size + 2;
     }
 }
