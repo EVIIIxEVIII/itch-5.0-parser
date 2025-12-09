@@ -5,19 +5,6 @@
 #include <memory.h>
 #include "parser.hpp"
 
-inline uint16_t load_be16(const std::byte* p) {
-    return (uint16_t(p[0]) << 8) | uint16_t(p[1]);
-}
-
-inline uint64_t load_be48(const std::byte* p) {
-    return (uint64_t(p[0]) << 40) |
-           (uint64_t(p[1]) << 32) |
-           (uint64_t(p[2]) << 24) |
-           (uint64_t(p[3]) << 16) |
-           (uint64_t(p[4]) << 8)  |
-           uint64_t(p[5]);
-}
-
 inline uint64_t load_be48_v2(const std::byte* p) {
     uint64_t v;
 
@@ -43,9 +30,7 @@ int main() {
         return 1;
     }
 
-    std::array<std::byte, 4096> src_buf{};
-    std::array<std::byte, 4096> dst_buf{};
-
+    std::array<std::byte, (1 * 1024 * 1024)> src_buf{};
     file.read(reinterpret_cast<char*>(src_buf.data()), src_buf.size());
     std::size_t bytes_read = file.gcount();
 
@@ -55,11 +40,11 @@ int main() {
     }
 
     const std::byte* src = src_buf.data();
-    std::byte* dst = dst_buf.data();
 
     Handler handler{};
     ItchParser parser;
-    parser.parse(src, 4096, handler);
+    Message msg = parser.parseMsg(src);
+    std::cout << char(msg.type) << '\n';
 
     //const std::byte* msg = src;
     //uint16_t message_len = load_be16(msg);

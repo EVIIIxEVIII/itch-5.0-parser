@@ -5,10 +5,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native -DNDEBUG")
+
 find_package(benchmark REQUIRED)
 
-add_library(itch_parser src/parser.cpp)
-target_include_directories(itch_parser PUBLIC include)
+add_library(itch_parser INTERFACE)
+target_include_directories(itch_parser INTERFACE include)
 
 add_executable(parser_bench
     benchmark/main.cpp
