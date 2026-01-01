@@ -8,8 +8,6 @@
 #include "parser_v1.hpp"
 #include "parser_v2.hpp"
 
-static volatile uint64_t sink = 0;
-
 template<typename MsgType, size_t N>
 struct CounterHandler {
     void handle(const MsgType& msg) {
@@ -25,14 +23,6 @@ struct CounterHandler {
     std::array<uint64_t, N> counts{};
     uint64_t messages_num = 0;
 };
-
-static void consume_counts(const std::array<uint64_t, 256>& counts) {
-    uint64_t acc = 0;
-    for (size_t i = 0; i < counts.size(); ++i) {
-        acc ^= (counts[i] + i);
-    }
-    sink ^= acc;
-}
 
 template<typename Parser, typename Handler>
 static void run_one(
@@ -57,8 +47,6 @@ static void run_one(
     double throughput = msgs / seconds;
     double avg_ns = (seconds * 1e9) / double(msgs);
 
-    consume_counts(handler.counts);
-
     std::cout << "=== " << name << " ===\n";
     std::cout << "Messages:        " << msgs << "\n";
     std::cout << "Seconds:         " << seconds << "\n";
@@ -82,10 +70,11 @@ int main() {
     }
 
     std::vector<std::byte> src_buf;
-    src_buf.resize(1ull << 30);
+    src_buf.resize(10 * 4096);
 
     file.read(reinterpret_cast<char*>(src_buf.data()), src_buf.size());
     size_t bytes_read = size_t(file.gcount());
+
     if (bytes_read < 3) {
         std::cerr << "File read too small\n";
         return 1;
@@ -100,18 +89,11 @@ int main() {
     CounterHandler<ITCHv1::Message, 256> h1;
     CounterHandler<ITCHv2::Message, 256> h2;
 
-    //run_one("WARMUP v2", parser_v2, h2, src, len);
     run_one("ITCH v1", parser_v1, h1, src, len);
     run_one("ITCH v2", parser_v2, h2, src, len);
 
-    //run_one("WARMUP v1", parser_v1, h1, src, len);
-
-    std::cout << "=== Per-type counts (v1) ===\n";
-    dump_counts(h1);
     std::cout << "\n=== Per-type counts (v2) ===\n";
     dump_counts(h2);
-
-    std::cerr << "sink=" << sink << "\n";
     return 0;
 }
 

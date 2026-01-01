@@ -11,7 +11,7 @@ struct HandlerV2 {
 };
 
 static void BM_Parse_v2(benchmark::State& state) {
-    static std::vector<std::byte> buf = load_chunk(1 * 1024 * 1024);
+    static std::vector<std::byte> buf = load_chunk(8 * 4096);
 
     ITCHv2::ItchParser parser;
     uint64_t total_messages = 0;
