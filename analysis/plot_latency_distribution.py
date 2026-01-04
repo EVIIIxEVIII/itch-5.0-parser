@@ -26,11 +26,6 @@ def plot_latency_distribution(csv_path="../data/latency_distribution.csv"):
         raise RuntimeError("CSV is empty")
 
     data = sorted(zip(latencies, counts), key=lambda x: x[0])
-    data = [(l, c) for l, c in data if l <= 1000]
-
-    if not data:
-        raise RuntimeError("No data <= 1000 ns")
-
     latencies, counts = zip(*data)
 
     p50 = weighted_percentile(latencies, counts, 0.50)
@@ -39,6 +34,11 @@ def plot_latency_distribution(csv_path="../data/latency_distribution.csv"):
     total_count = sum(counts)
     avg_latency = sum(l * c for l, c in zip(latencies, counts)) / total_count
 
+    data = [(l, c) for l, c in data if l <= 200]
+    if not data:
+        raise RuntimeError("No data <= 1000 ns")
+
+    latencies, counts = zip(*data)
     buckets = {}
     for latency, count in zip(latencies, counts):
         buckets[latency] = buckets.get(latency, 0) + count
@@ -80,9 +80,10 @@ def plot_latency_distribution(csv_path="../data/latency_distribution.csv"):
         label="p50"
     )
 
-
+    plt.savefig("latency_distribution.png", dpi=300, bbox_inches="tight")
     plt.tight_layout()
     plt.show()
+
 
 
 if __name__ == "__main__":

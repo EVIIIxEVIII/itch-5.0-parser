@@ -4,6 +4,7 @@
 #include <iostream>
 #include <ittnotify.h>
 #include <vector>
+#include <x86intrin.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -156,20 +157,24 @@ int main() {
     const std::byte* src = src_buf.data();
     size_t len = bytes_read;
 
+
     //ITCHv1::ItchParser parser_v1;
     //CounterHandler h1;
     //run_one("ITCH v1", parser_v1, h1, src, len);
 
     __itt_resume();
 
-    pid_t perf_pid = run_perf_stat();
+    //pid_t perf_pid = run_perf_stat();
+
+    //sleep(3);
 
     ITCHv1::ItchParser parser_v1_2;
     OrderBookHandlerSingle obHandler;
     parser_v1_2.parse_specific(src, len, obHandler);
-    export_latency_distribution_csv(obHandler.latency_distribution);
 
-    kill(perf_pid, SIGINT);
+    //kill(perf_pid, SIGINT);
+
+    export_latency_distribution_csv(obHandler.latency_distribution);
 
     return 0;
 }

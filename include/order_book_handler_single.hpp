@@ -4,6 +4,7 @@
 #include <chrono>
 #include <absl/container/flat_hash_map.h>
 #include "array_level.hpp"
+#include "heap_level.hpp"
 #include "parser_v1.hpp"
 #include "vector_level.hpp"
 #include "vector_level_split_array.hpp"
@@ -41,7 +42,7 @@ struct OrderBookHandlerSingle {
     void handle_before();
 
     using clock = std::chrono::high_resolution_clock;
-    OB::OrderBook<OB::ArrayLevelBSearch> order_book;
+    OB::OrderBook<OB::HeapLevels> order_book;
 
     bool touched = false;
     std::chrono::time_point<clock> start;
