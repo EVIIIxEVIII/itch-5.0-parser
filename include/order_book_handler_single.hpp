@@ -12,6 +12,7 @@
 #include "vector_level_split_array.hpp"
 #include "array_level_binary_search.hpp"
 #include "order_book.hpp"
+#include "heap_levels_custom_map.hpp"
 
 struct OrderBookHandlerSingle {
     uint16_t target_stock_locate = -1;
@@ -42,6 +43,7 @@ struct OrderBookHandlerSingle {
 
     void handle_after();
     void handle_before();
+    void reset();
 
     OB::OrderBook<OB::HeapLevels> order_book;
 
@@ -56,6 +58,7 @@ struct OrderBookHandlerSingle {
     uint32_t last_price = 0;
     std::vector<uint32_t> prices;
 
+
     OrderBookHandlerSingle() {
         prices.reserve(20'000);
     }
@@ -67,14 +70,14 @@ inline void OrderBookHandlerSingle::handle_before() {
 }
 
 inline void OrderBookHandlerSingle::handle_after() {
-    uint64_t t1 = __rdtscp(&aux_end);
-    auto cycles = t1 - t0;
-
     uint32_t best_bid = order_book.best_bid().price;
     if (last_price != best_bid) {
         prices.push_back(best_bid);
         last_price = best_bid;
     }
+
+    uint64_t t1 = __rdtscp(&aux_end);
+    auto cycles = t1 - t0;
 
     if (touched && aux_end == aux_start) {
         latency_distribution[cycles]++;

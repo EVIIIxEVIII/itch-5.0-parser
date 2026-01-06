@@ -20,9 +20,12 @@ public:
 
     uint64_t max_orders = 0;
     absl::flat_hash_map<uint64_t, Order> orders_map;
-    //ankerl::unordered_dense::map<uint64_t, Order> orders_map;
     Levels<Side::Bid> bid_levels;
     Levels<Side::Ask> ask_levels;
+
+    OrderBook() {
+        //orders_map.reserve(20'000);
+    }
 };
 
 template<template<Side> typename Levels>

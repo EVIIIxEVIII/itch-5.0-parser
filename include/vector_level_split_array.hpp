@@ -8,7 +8,12 @@ template<Side S>
 class VectorLevelBSearch {
 public:
     VectorLevelBSearch() {
-        levels.reserve(3000);
+        levels.reserve(5000);
+        levels.resize(5000);
+        for (auto& x : levels) {
+            x = {};
+        }
+        levels.clear();
     }
 
     void remove(Level level);

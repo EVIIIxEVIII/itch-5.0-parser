@@ -71,14 +71,14 @@ enum class MessageType {
     X('O', DIRECT_LISTING_CAPITAL_RAISE, DirectListingCapitalRaise, direct_listing_capital_raise,  unlikely)
 
 #define ITCH_MESSAGE_LIST_REDUCED_SET(X) \
-    X(STOCK_DIRECTORY,              StockDirectory,              stock_directory) \
-    X(ADD_ORDER_NO_MPID,            AddOrderNoMpid,              add_order_no_mpid) \
-    X(ADD_ORDER_MPID,               AddOrderMpid,                add_order_mpid) \
-    X(ORDER_EXECUTED,               OrderExecuted,               order_executed) \
-    X(ORDER_EXECUTED_PRICE,         OrderExecutedPrice,          order_executed_price) \
-    X(ORDER_CANCEL,                 OrderCancel,                 order_cancel) \
-    X(ORDER_DELETE,                 OrderDelete,                 order_delete) \
-    X(ORDER_REPLACE,                OrderReplace,                order_replace) \
+    X('R', STOCK_DIRECTORY,              StockDirectory,              stock_directory) \
+    X('A', ADD_ORDER_NO_MPID,            AddOrderNoMpid,              add_order_no_mpid) \
+    X('F', ADD_ORDER_MPID,               AddOrderMpid,                add_order_mpid) \
+    X('E', ORDER_EXECUTED,               OrderExecuted,               order_executed) \
+    X('C', ORDER_EXECUTED_PRICE,         OrderExecutedPrice,          order_executed_price) \
+    X('X', ORDER_CANCEL,                 OrderCancel,                 order_cancel) \
+    X('D', ORDER_DELETE,                 OrderDelete,                 order_delete) \
+    X('U', ORDER_REPLACE,                OrderReplace,                order_replace) \
 
 struct SystemEvent {
     uint16_t stock_locate;
@@ -886,9 +886,6 @@ template<typename SpecificHandler>
 using ParseFn = void(*)(std::byte const *, SpecificHandler&);
 
 template<typename SpecificHandler>
-inline void ignore_message(std::byte const * src, SpecificHandler& dst) {};
-
-template<typename SpecificHandler>
 [[gnu::noinline, gnu::cold]] static void bad_type(std::byte const * _, SpecificHandler& __) {
     throw std::runtime_error("Unknown message type");
 }
@@ -899,6 +896,9 @@ consteval bool is_valid_message_type(uint8_t c) {
     }
     return false;
 }
+
+template<typename SpecificHandler>
+inline void ignore_message(std::byte const * src, SpecificHandler& dst) {};
 
 template<typename SpecificHandler>
 consteval std::array<ParseFn<SpecificHandler>, 256> make_dispatch() {
@@ -912,10 +912,10 @@ consteval std::array<ParseFn<SpecificHandler>, 256> make_dispatch() {
         }
     }
 
-    #define X(CHAR, ENUM, TYPE, FIELD, LIKELINESS) \
+    #define X(CHAR, ENUM, TYPE, FIELD) \
         table[static_cast<uint8_t>(CHAR)] = &parse##TYPE<SpecificHandler>;
 
-    ITCH_MESSAGE_LIST(X)
+    ITCH_MESSAGE_LIST_REDUCED_SET(X)
 
     #undef X
 
@@ -955,10 +955,10 @@ void ItchParser::parse_specific(std::byte const * src, size_t len, SpecificHandl
 
     while (end - src >= 3) {
         uint16_t size = load_be16(src);
-        if (end - src < 2 + size) {
+        src += 2;
+        if (end - src < size) {
             break;
         }
-        src += 2;
 
         auto raw_type = char(src[0]);
         MessageType type = static_cast<MessageType>(raw_type);
@@ -966,7 +966,7 @@ void ItchParser::parse_specific(std::byte const * src, size_t len, SpecificHandl
 
         handler.handle_before();
 
-        high_prio_dispatch<SpecificHandler>[raw_type](src, handler);
+        //high_prio_dispatch<SpecificHandler>[raw_type](src, handler);
         dispatch<SpecificHandler>[raw_type](src, handler);
 
         handler.handle_after();

@@ -20,10 +20,11 @@ struct Order {
     Side side;
 };
 
-[[gnu::noinline]] static void UNEXPECTED(bool condition, std::string_view message) {
+}
+
+[[gnu::noinline]] void UNEXPECTED(bool condition, std::string_view message) {
     if (condition) {
         std::cerr << message << '\n';
         std::abort();
     }
-}
 }

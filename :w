@@ -47,7 +47,7 @@ std::pair<std::vector<std::byte>, size_t> init_benchmark() {
     }
 
     std::vector<std::byte> src_buf;
-    src_buf.resize(3LL * 1024 * 1024 * 1024);
+    src_buf.resize(1LL * 1024 * 1024 * 1024);
 
     file.read(reinterpret_cast<char*>(src_buf.data()), src_buf.size());
     size_t bytes_read = size_t(file.gcount());
@@ -199,6 +199,22 @@ void export_prices_csv(
     }
 }
 
+void test_hash_map() {
+    PriceToQtyMap price_to_qty_map;
+
+    price_to_qty_map.insert(1003000, 10);
+    price_to_qty_map.insert(1004000, 11);
+    price_to_qty_map.insert(1005000, 12);
+    price_to_qty_map.insert(1007000, 13);
+    price_to_qty_map.insert(1015000, 14);
+
+    std::cout << *price_to_qty_map.find(1003000) << '\n';
+    std::cout << *price_to_qty_map.find(1004000) << '\n';
+    std::cout << *price_to_qty_map.find(1005000) << '\n';
+    std::cout << *price_to_qty_map.find(1007000) << '\n';
+    std::cout << *price_to_qty_map.find(1015000) << '\n';
+}
+
 int main() {
     __itt_pause();
     auto res = init_benchmark();
@@ -208,18 +224,20 @@ int main() {
     const std::byte* src = src_buf.data();
     size_t len = bytes_read;
 
+    test_hash_map();
+
     __itt_resume();
 
     ITCHv1::ItchParser parser_v1_2;
     OrderBookHandlerSingle obHandler;
+    parser_v1_2.parse_specific(src, len, obHandler);
 
     pid_t perf_pid = run_perf_stat();
     sleep(3);
 
     parser_v1_2.parse_specific(src, len, obHandler);
-
-    kill(perf_pid, SIGINT);
     __itt_pause();
+    kill(perf_pid, SIGINT);
 
     export_latency_distribution_csv(obHandler);
     export_prices_csv(obHandler.prices);

@@ -8,10 +8,6 @@ namespace OB {
 template<Side S>
 class HeapLevels {
 public:
-    HeapLevels() {
-        qty_by_price.reserve(4000);
-    }
-
     void add(Level level);
     void remove(Level level);
     Level best();
@@ -47,9 +43,9 @@ inline void HeapLevels<S>::remove(Level level) {
     UNEXPECTED(level.qty > it->second, "Remove underflow");
 
     it->second -= level.qty;
-    if (it->second == 0) {
-        qty_by_price.erase(it);
-    }
+    //if (it->second == 0) {
+    //    qty_by_price.erase(it);
+    //}
 }
 
 template<Side S>
@@ -57,7 +53,7 @@ inline Level HeapLevels<S>::best() {
     while (!heap.empty()) {
         uint32_t price = heap.top();
         auto it = qty_by_price.find(price);
-        if (it != qty_by_price.end()) {
+        if (it != qty_by_price.end() && it->second) {
             return Level{ price, it->second };
         }
         heap.pop();
