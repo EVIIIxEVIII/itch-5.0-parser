@@ -3,18 +3,9 @@ This is an ITCH parser which updates a custom order book implementations. The re
 
 # Results
 
-### Order Book + ITCH parsing (with high priority messages) Latency Distribution 
-<img width="2605" height="1638" alt="latency_distribution" src="https://github.com/user-attachments/assets/b9f04304-b6b9-4ce2-8791-8d6ed092c191" />
+### ITCH parsing + Order Book Updates Latency Distribution 
+<img width="3000" height="1800" alt="parsing_and_order_book_latency_distribution" src="https://github.com/user-attachments/assets/7bd09120-943f-49e3-a60a-75e337617a59" />
 
 
-### Order Book + ITCH parsing (without high priority messages) Latency Distribution 
-<img width="2578" height="1638" alt="latency_distribution_no_high_prio" src="https://github.com/user-attachments/assets/dce68999-5b16-40ff-9279-fe81b87a5641" />
-
-### ITCH parsing without high priority messages
-<img width="2499" height="1638" alt="latency_distribution_parser_no_high_prio" src="https://github.com/user-attachments/assets/048418e8-e9dd-436f-b54e-ed5c7b19cbc7" />
-
-### ITCH parsing with high priority messages
-<img width="2539" height="1638" alt="latency_distribution_parser" src="https://github.com/user-attachments/assets/977f0e9f-02cb-4e0e-b61b-056a306c1342" />
-
-### Best Bids on Nvidia stock on 30/01/2019
-<img width="1782" height="1361" alt="nvidia_best_bids" src="https://github.com/user-attachments/assets/057e95b6-d9f0-43d9-a50a-a76813dd38d9" />
+### ITCH parsing Latency Distribution
+<img width="3000" height="1800" alt="parsing_lantecy_distribution" src="https://github.com/user-attachments/assets/c10d683f-3ff1-414b-b4f1-08fbfa188591" />
