@@ -1,6 +1,6 @@
 import csv
 import matplotlib.pyplot as plt
-import math
+import sys
 
 def weighted_percentile(latencies, counts, percentile):
     total = sum(counts)
@@ -12,11 +12,11 @@ def weighted_percentile(latencies, counts, percentile):
             return latency
     return latencies[-1]
 
-def plot_latency_distribution(csv_path):
+def plot_latency_distribution(infile, outfile):
     latencies = []
     counts = []
 
-    with open(csv_path, "r", newline="") as f:
+    with open(infile, "r", newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             latencies.append(int(row["latency_ns"]))
@@ -48,7 +48,6 @@ def plot_latency_distribution(csv_path):
 
     plt.figure(figsize=(10, 6))
     plt.bar(bx, by)
-    #plt.xscale("log")
 
     plt.xlabel("Latency bucket (ns)")
     plt.ylabel("Count")
@@ -80,13 +79,25 @@ def plot_latency_distribution(csv_path):
         label="p50"
     )
 
-    plt.savefig("latency_distribution.png", dpi=300, bbox_inches="tight")
     plt.tight_layout()
+    plt.savefig(outfile, dpi=300)
     plt.show()
 
-
-
 if __name__ == "__main__":
-    plot_latency_distribution("../data/parsing_and_order_book_latency_distribution.csv")
-    plot_latency_distribution("../data/parsing_lantecy_distribution.csv")
+    if len(sys.argv) != 3:
+        print("Please specify the input dir and the output dir")
+        sys.exit(1)
+
+    indir = sys.argv[1];
+    outdir = sys.argv[2];
+
+    plot_latency_distribution(
+        indir  + "parsing_and_order_book_latency_distribution.csv",
+        outdir + "parsing_and_order_book_latency_distribution.png"
+    )
+
+    plot_latency_distribution(
+        indir  + "parsing_lantecy_distribution.csv",
+        outdir + "parsing_lantecy_distribution.png"
+    )
 

@@ -1,4 +1,3 @@
-#include <array>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -11,7 +10,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include "parser_v2.hpp"
+#include "itch_parser.hpp"
 #include "example_benchmark.hpp"
 #include "example_benchmark_parsing.hpp"
 #include "array_level.hpp"
@@ -151,7 +150,7 @@ void export_latency_distribution_csv(
         }
     );
 
-    std::ofstream out("../data/" + file_name);
+    std::ofstream out(file_name);
     if (!out) {
         std::abort();
     }
@@ -171,11 +170,12 @@ void export_latency_distribution_csv(
 }
 
 void export_prices_csv(
-    const std::vector<uint32_t>& prices
+    const std::vector<uint32_t>& prices,
+    std::string outdir
 ) {
     std::vector<uint32_t> data = prices;
 
-    std::ofstream out("../data/prices.csv");
+    std::ofstream out(outdir + "prices.csv");
     if (!out) {
         std::abort();
     }
@@ -188,13 +188,15 @@ void export_prices_csv(
 
 int main(int argc, char** argv) {
     std::string filepath;
+    std::string outdir;
 
-    if (argc == 1) {
-        std::cout << "Please specify the file to parse" << '\n';
+    if (argc != 3) {
+        std::cout << "Please specify the file to parse and an output directory" << '\n';
         return 1;
     }
 
     filepath = argv[1];
+    outdir   = argv[2];
 
     auto res = init_benchmark(filepath);
     auto src_buf = res.first;
@@ -207,14 +209,14 @@ int main(int argc, char** argv) {
     {
         BenchmarkOrderBook ob_bm_handler;
         parser.parse(src, len, ob_bm_handler);
-        export_latency_distribution_csv(ob_bm_handler, "parsing_and_order_book_latency_distribution.csv");
-        export_prices_csv(ob_bm_handler.prices);
+        export_latency_distribution_csv(ob_bm_handler, outdir + "parsing_and_order_book_latency_distribution.csv");
+        export_prices_csv(ob_bm_handler.prices, outdir);
     }
 
     {
         BenchmarkParsing parsing_bm_handler;
         parser.parse(src, len, parsing_bm_handler);
-        export_latency_distribution_csv(parsing_bm_handler, "parsing_lantecy_distribution.csv");
+        export_latency_distribution_csv(parsing_bm_handler, outdir + "parsing_lantecy_distribution.csv");
     }
 
     return 0;
