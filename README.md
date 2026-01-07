@@ -7,7 +7,7 @@ to around 0.3 cycle per ns.
 ### The ITCH 5.0 parser
 The itch parser is a fully independet C++20 header file, which can be dragged and dropped into an existent project as it is.
 
-The file can be found at ```include/itch_parser.hpp```.
+The file can be found at ```include/itch_parser.hpp``` and can be accessed in the ITCH:: namespace.
 
 An example of a Handler class can be found at ```include/example_benchmark_parsing.hpp```.
 
