@@ -22,6 +22,26 @@ sudo apt install libabsl-dev
 
 The `order_book.hpp` implementation serves as an interface and all implementations for the underlying order book operations can be found in the `include/levels/` directory. The best implementation used in the benchmarks is the `include/levels/heap_level.hpp` implementation.
 
+# How to run? 
+```
+mkdir build
+cd build
+cmake ..
+make
+./benchmark [path to the ITCH file] [results directory]
+```
+
+# How to analyze
+To analyze the latency you have to go to run the `analysis/plot_latency_distribution.py` and `analysis/plot_prices.py` files like this:
+```
+python plot_latency_distribution.py [input directory] [output directory]
+python plot_prices.py [path to prices.csv] [output png file]
+```
+You can also analyze the benchmarks using perf by uncommenting the 3 lines in `int main()`, but make sure you remove the timing code from the benchmark handlers so that the perf is not poluted with almost perfectly predicted brances from the timing code.
+
+# Where to get the ITCH file? 
+The ITCH file can be downloaded here: https://emi.nasdaq.com/ITCH/Nasdaq%20ITCH/. For my tests I downloaded the 01302019.NASDAQ_ITCH50 file.
+
 # Results
 
 The results were obtained on a pinned p-core of an i7-12700h CPU using `taskset -c 1` with turbo boost on (4.653Ghz peak) with Hyper Threading on and the CPU frequency scaling governor set to performance on an idle machine. The machine is an Asus ROG Zephyrus M16 GU603ZM_GU603ZM. The OS is Ubuntu 24.04.3 LTS with an unmodified Linux 6.14.0-37-generic kernel. Compiled with g++ 13.3.0 with -DNDEBUG -O3 -march=native flags. Latency measured using the `rdtscp` instruction and then converted into ns by estimating its frequence. 
