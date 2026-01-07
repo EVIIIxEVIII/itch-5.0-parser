@@ -714,8 +714,11 @@ template<typename SpecificHandler>
 inline void ignore_message(std::byte const * src, SpecificHandler& dst) {};
 
 template<typename SpecificHandler>
-ITCH_COLD static void bad_type(std::byte const * _, SpecificHandler& __) {
-    throw std::runtime_error("Unknown message type");
+ITCH_COLD static void bad_type(std::byte const * src, SpecificHandler& __) {
+    char c = static_cast<char>(src[0]);
+    throw std::runtime_error(
+        std::string("Unknown message type '") + c + "'"
+    );
 }
 
 consteval bool is_valid_message_type(uint8_t c) {

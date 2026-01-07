@@ -3,14 +3,10 @@
 #include <cstdint>
 #include <absl/container/flat_hash_map.h>
 #include <x86intrin.h>
-#include "heap_level.hpp"
 #include "itch_parser.hpp"
-#include "order_book.hpp"
 
 struct BenchmarkParsing {
-    uint16_t target_stock_locate = -1;
-
-inline void handle(const ITCH::AddOrderNoMpid& msg);
+    inline void handle(const ITCH::AddOrderNoMpid& msg);
     inline void handle(const ITCH::OrderCancel& msg);
     inline void handle(const ITCH::OrderDelete& msg);
     inline void handle(const ITCH::OrderReplace& msg);
@@ -40,7 +36,6 @@ inline void handle(const ITCH::AddOrderNoMpid& msg);
     void handle_before();
     void reset();
 
-    OB::OrderBook<OB::HeapLevels> order_book;
     absl::flat_hash_map<uint64_t, uint64_t> latency_distribution;
 
     uint64_t total_messages = 0;

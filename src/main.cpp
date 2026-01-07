@@ -12,15 +12,6 @@
 #include "itch_parser.hpp"
 #include "example_benchmark.hpp"
 #include "example_benchmark_parsing.hpp"
-#include "array_level.hpp"
-
-template<typename Handler>
-static void dump_counts(const Handler& handler) {
-    for (size_t i = 0; i < handler.counts.size(); ++i) {
-        if (handler.counts[i] == 0) continue;
-        std::cout << char(i) << ' ' << handler.counts[i] << '\n';
-    }
-}
 
 std::pair<std::vector<std::byte>, size_t> init_benchmark(std::string filename) {
     std::ifstream file(filename, std::ios::binary);
@@ -84,20 +75,6 @@ pid_t run_perf_stat() {
     }
 
     return pid;
-}
-
-void print_order_book(OB::OrderBook<OB::ArrayLevel> order_book) {
-    std::cout << "====== Bid ======" << '\n';
-    for (auto bid : order_book.bid_levels.levels) {
-        std::cout << bid.price << ' ' << bid.qty << '\n';
-    }
-
-    std::cout << "====== Ask ======\n";
-    for (auto it = order_book.ask_levels.levels.rbegin();
-         it != order_book.ask_levels.levels.rend();
-         ++it) {
-        std::cout << it->price << ' ' << it->qty << '\n';
-    }
 }
 
 uint64_t calibrate_tsc() {
