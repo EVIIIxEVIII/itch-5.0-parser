@@ -18,3 +18,8 @@ target_link_libraries(itch_parser INTERFACE benchmark::benchmark pthread)
 
 add_executable(benchmark src/main.cpp)
 target_link_libraries(benchmark PRIVATE itch_parser)
+
+add_executable(perf_bench src/main.cpp)
+target_link_libraries(perf_bench PRIVATE itch_parser)
+target_compile_definitions(perf_bench PRIVATE PERF)
+

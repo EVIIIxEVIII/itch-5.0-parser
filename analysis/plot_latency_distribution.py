@@ -31,10 +31,12 @@ def plot_latency_distribution(infile, outfile):
     p50 = weighted_percentile(latencies, counts, 0.50)
     p95 = weighted_percentile(latencies, counts, 0.95)
     p99 = weighted_percentile(latencies, counts, 0.99)
+    p999 = weighted_percentile(latencies, counts, 0.999)
+
     total_count = sum(counts)
     avg_latency = sum(l * c for l, c in zip(latencies, counts)) / total_count
 
-    data = [(l, c) for l, c in data if l <= 500]
+    data = [(l, c) for l, c in data if l <= 200]
     if not data:
         raise RuntimeError("No data <= 1000 ns")
 
@@ -57,7 +59,8 @@ def plot_latency_distribution(infile, outfile):
         f"avg = {avg_latency:.2f} ns\n"
         f"p50 = {p50} ns\n"
         f"p95 = {p95} ns\n"
-        f"p99 = {p99} ns"
+        f"p99 = {p99} ns\n"
+        f"p999 = {p999} ns"
     )
 
     plt.text(
@@ -96,8 +99,8 @@ if __name__ == "__main__":
         outdir + "parsing_and_order_book_latency_distribution.png"
     )
 
-    plot_latency_distribution(
-        indir  + "parsing_lantecy_distribution.csv",
-        outdir + "parsing_lantecy_distribution.png"
-    )
+    #plot_latency_distribution(
+    #    indir  + "parsing_lantecy_distribution.csv",
+    #    outdir + "parsing_lantecy_distribution.png"
+    #)
 

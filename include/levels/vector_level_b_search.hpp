@@ -4,6 +4,11 @@
 
 namespace OB {
 
+// p50 = 61ns
+// p95 = 156ns
+// p99 = 224ns
+// p999 = 387ns
+
 template<Side S>
 class VectorLevelBSearch {
 public:

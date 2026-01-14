@@ -1,12 +1,16 @@
 #pragma once
 
+#include <benchmark/benchmark.h>
 #include <cstdint>
 #include <absl/container/flat_hash_map.h>
 #include <x86intrin.h>
 #include "levels/heap_level.hpp"
 #include "levels/btree_level.hpp"
 #include "levels/array_levels_v2.hpp"
+#include "levels/map_level.hpp"
 #include "itch_parser.hpp"
+#include "levels/vector_level_b_search.hpp"
+#include "levels/vector_levels_b_search_split.hpp"
 #include "order_book.hpp"
 
 struct BenchmarkOrderBook {
@@ -25,7 +29,7 @@ struct BenchmarkOrderBook {
     void handle_before();
     void reset();
 
-    OB::OrderBook<OB::ArrayLevelsV2> order_book;
+    OB::OrderBook<OB::VectorLevelBSearch> order_book;
 
     bool touched = false;
     absl::flat_hash_map<uint64_t, uint64_t> latency_distribution;
@@ -39,17 +43,24 @@ struct BenchmarkOrderBook {
     std::vector<uint32_t> prices;
 
     BenchmarkOrderBook() {
+        #ifndef PERF
         prices.reserve(60'000);
+        #endif
     }
 };
 
 inline void BenchmarkOrderBook::handle_before() {
+    #ifndef PERF
     touched = false;
     t0 = __rdtscp(&aux_start);
+    #endif
 }
 
 inline void BenchmarkOrderBook::handle_after() {
     uint32_t best_bid = order_book.best_bid().price;
+    benchmark::DoNotOptimize(best_bid);
+
+    #ifndef PERF
     if (last_price != best_bid) {
         prices.push_back(best_bid);
         last_price = best_bid;
@@ -61,11 +72,13 @@ inline void BenchmarkOrderBook::handle_after() {
     if (touched && aux_end == aux_start) {
         latency_distribution[cycles]++;
     }
+    #endif
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::StockDirectory& msg) {
     if (std::string_view(msg.stock, 8) == "NVDA    ") {
         target_stock_locate = msg.stock_locate;
+        touched = true;
         total_messages++;
     }
 }

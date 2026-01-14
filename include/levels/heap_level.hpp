@@ -6,6 +6,11 @@
 
 namespace OB {
 
+// p50 = 55ns
+// p95 = 145ns
+// p99 = 232ns
+// p999 = 806ns
+
 template<Side S>
 class HeapLevels {
 public:

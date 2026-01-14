@@ -5,6 +5,11 @@
 
 namespace OB {
 
+// p50 = 61ns
+// p95 = 145ns
+// p99 = 209ns
+// p999 = 389ns
+
 template<Side S>
 class BTreeLevels {
 public:

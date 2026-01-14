@@ -8,10 +8,37 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <thread>
+#include <random>
 
 #include "itch_parser.hpp"
 #include "benchmarks/example_benchmark.hpp"
 #include "benchmarks/example_benchmark_parsing.hpp"
+
+std::atomic<bool> run_noise = true;
+
+void allocator_noise() {
+    std::mt19937 rng(123);
+    std::uniform_int_distribution<int> size_dist(4096, 8*4096);
+    std::uniform_int_distribution<int> action(0, 1);
+
+    std::vector<void*> blocks;
+
+    while (run_noise.load()) {
+        if (action(rng) == 0 || blocks.empty()) {
+            size_t sz = size_dist(rng);
+            void* p = std::malloc(sz);
+            memset(p, 0xAA, sz);
+            blocks.push_back(p);
+        } else {
+            size_t i = rng() % blocks.size();
+            std::free(blocks[i]);
+            blocks.erase(blocks.begin() + i);
+        }
+
+        std::this_thread::sleep_for(std::chrono::nanoseconds(50));
+    }
+}
 
 std::pair<std::vector<std::byte>, size_t> init_benchmark(std::string filename) {
     std::ifstream file(filename, std::ios::binary);
@@ -44,9 +71,9 @@ pid_t run_perf_report() {
             "perf",
             "perf",
             "record",
-            "-e",
-            "branch-misses",
-            "-c", "100",
+            "-F",
+            "999",
+            "-g",
             "-p", pidbuf,
             nullptr
         );
@@ -181,23 +208,39 @@ int main(int argc, char** argv) {
     const std::byte* src = src_buf.data();
     size_t len = bytes_read;
 
-    pid_t pid = run_perf_stat();
-    sleep(3);
+    std::thread noise(allocator_noise);
+
+    #ifdef PERF
+        pid_t pid = run_perf_stat();
+        sleep(3);
+    #endif
 
     ITCH::ItchParser parser;
     {
         BenchmarkOrderBook ob_bm_handler;
         parser.parse(src, len, ob_bm_handler);
+
+        #ifndef PERF
         export_latency_distribution_csv(ob_bm_handler, outdir + "parsing_and_order_book_latency_distribution.csv");
         export_prices_csv(ob_bm_handler.prices, outdir);
+        #endif
     }
 
     //{
     //    BenchmarkParsing parsing_bm_handler;
     //    parser.parse(src, len, parsing_bm_handler);
+
+    //    #ifndef PERF
     //    export_latency_distribution_csv(parsing_bm_handler, outdir + "parsing_lantecy_distribution.csv");
+    //    #endif
     //}
 
-    kill(pid, SIGINT);
+    #ifdef PERF
+        kill(pid, SIGINT);
+    #endif
+
+    run_noise = false;
+    noise.join();
+
     return 0;
 }
