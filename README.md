@@ -61,6 +61,7 @@ The results were obtained on a pinned p-core of an i7-12700h CPU using `taskset 
 
 ### ITCH parsing + Order Book Updates Latency Distribution 
 <img width="3000" height="1800" alt="parsing_and_order_book_latency_distribution" src="https://github.com/user-attachments/assets/3c028172-44b4-4362-8dee-bc081874e3d7" />
+**Latency spikes every 3ns are caused by the use of rdtsc with an lfence for timing (0.3ns per cycle on my machine). The following instruction returns the latency in cpu cycles and then converting cycles to ns causes the latency spikes. You could easily swap out rdtsc with a high resolution clock, but that would increase the latencies by ~10ns across the board.**
 
 ### ITCH parsing Latency Distribution
 <img width="3000" height="1800" alt="parsing_lantecy_distribution" src="https://github.com/user-attachments/assets/82497778-c3b8-466d-a183-7fbc7ff3ca8e" />
