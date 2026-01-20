@@ -13,7 +13,6 @@
 
 #include "itch_parser.hpp"
 #include "benchmarks/benchmark_utils.hpp"
-#include "benchmarks/example_benchmark_parsing.hpp"
 #include "benchmarks/example_benchmark.hpp"
 
 std::atomic<bool> run_noise = true;
