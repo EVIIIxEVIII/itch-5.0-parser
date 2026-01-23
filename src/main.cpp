@@ -169,8 +169,9 @@ int main(int argc, char** argv) {
             out.flush();
 
             total_size += itch_len;
-            rte_pktmbuf_free(bufs[i]);
         }
+
+        rte_pktmbuf_free_bulk(bufs, n);
 
         uint64_t now = rte_get_timer_cycles();
         if (now - last_print > hz) {
