@@ -37,11 +37,15 @@ make
 ```
 If you want to get the .csv files with latency numbers and recorded best bids then run this:
 
-```sudo ./benchmark   --proc-type=primary --file-prefix=memif_cli   --vdev=net_memif0,socket=/tmp/memif.sock,id=0,role=client   --log-level=pmd.net.memif,8   [ITCH file path] [results directory]```
+```
+sudo ./benchmark   --proc-type=primary --file-prefix=memif_cli   --vdev=net_memif0,socket=/tmp/memif2.sock,id=0,role=client,zero-copy=yes,rsize=14 --single-file-segments   --log-level=pmd.net.memif,8 [ITCH file path] [results directory]
+```
 
 If you want to run it in perf mode (latency is NOT recorded to have as little data pollution as possible) then run this:
 
-```./perf_benc [path to the ITCH file] [results directory]```
+```
+./perf_benc [path to the ITCH file] [results directory]
+```
 
 # How to analyze?
 First install matplotlib by running:
