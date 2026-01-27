@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
     uint16_t port_id = 0;
     rte_mempool* pool = rte_pktmbuf_pool_create(
         "mbuf_pool",
-        4095,
+        32367,
         256,
         0,
         RTE_PKTMBUF_HEADROOM + 2048,
@@ -85,11 +85,11 @@ int main(int argc, char** argv) {
     rte_eth_rxconf rxconf = dev_info.default_rxconf;
     rxconf.offloads = 0;
 
-    if (rte_eth_tx_queue_setup(port_id, 0, 2048,
+    if (rte_eth_tx_queue_setup(port_id, 0, 8092,
                                rte_socket_id(), &txconf) != 0)
         throw std::runtime_error("tx queue failed");
 
-    if (rte_eth_rx_queue_setup(port_id, 0, 2048,
+    if (rte_eth_rx_queue_setup(port_id, 0, 8092,
                                rte_socket_id(), &rxconf, pool) != 0)
         throw std::runtime_error("rx queue failed");
 
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
 
     ITCH::ItchParser parser;
     BenchmarkOrderBook ob_bm_handler;
-    rte_mbuf* bufs[512];
+    rte_mbuf* bufs[64];
 
     std::ofstream out("../data/itch_out",
                   std::ios::binary | std::ios::out | std::ios::trunc);
@@ -129,11 +129,10 @@ int main(int argc, char** argv) {
     uint64_t last_print = rte_get_timer_cycles();
     uint64_t hz = rte_get_timer_hz();
     size_t total_size = 0;
-
     uint64_t pkts = 0;
 
     while (true) {
-        uint16_t n = rte_eth_rx_burst(port_id, 0, bufs, 512);
+        uint16_t n = rte_eth_rx_burst(port_id, 0, bufs, 64);
         pkts += n;
 
         for (int i = 0; i < n; ++i) {
@@ -169,9 +168,6 @@ int main(int argc, char** argv) {
                 std::cout << rte_be_to_cpu_16(udp->dgram_len) + sizeof(rte_ipv4_hdr) + sizeof(rte_ether_hdr) << ' ' << m->pkt_len << '\n';
                 throw std::runtime_error("Something went wrong, pkt length doesn't match expected length");
             }
-
-            out.write(reinterpret_cast<char*>(p), itch_len);
-            out.flush();
 
             total_size += itch_len;
         }
