@@ -13,11 +13,15 @@
 #include <unistd.h>
 #include <thread>
 #include <random>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "itch_parser.hpp"
 #include "benchmarks/benchmark_utils.hpp"
-#include "benchmarks/example_benchmark.hpp"
-#include "benchmarks/example_benchmark_parsing.hpp"
+#include "order_book_shared.hpp"
+#include "spsc_queue.hpp"
+#include "parser_handler.hpp"
 
 std::atomic<bool> run_noise = true;
 
@@ -44,8 +48,52 @@ void allocator_noise() {
     }
 }
 
+void strategy(SPSCQueue<OB::BestLvlChange>& queue) {
+    OB::BestLvlChange new_level;
+    while (true) {
+        bool res = queue.try_pop(new_level);
+        //if (res) {
+        //    std::cout << new_level.price << '\n';
+        //}
+    }
+}
 
 int main(int argc, char** argv) {
+    //std::string itch_file_path = argv[1];
+    //std::string outdir = argv[2];
+
+    //SPSCQueue<OB::BestLvlChange> strategy_queue;
+    //ITCH::ItchParser parser;
+
+    //ParserHandler handler(strategy_queue);
+
+    //int fd = open(itch_file_path.data(), O_RDONLY);
+    //struct stat st;
+
+    //if(fstat(fd, &st) < 0) {
+    //    std::cerr << "Fstat failed" << '\n';
+    //    std::abort();
+    //}
+
+    //size_t size = st.st_size;
+    //void* ptr = mmap(nullptr, size, PROT_READ, MAP_PRIVATE, fd, 0);
+    //if (ptr == MAP_FAILED) {
+    //    std::cerr << "Map failed" << '\n';
+    //    std::abort();
+    //}
+
+    //madvise(ptr, size, MADV_WILLNEED | MADV_SEQUENTIAL);
+    //std::byte* src = static_cast<std::byte*>(ptr);
+
+    //parser.parse(src, size, handler);
+
+    //munmap(ptr, size);
+    //close(fd);
+
+    //export_latency_distribution_csv(handler, outdir + "parsing_and_order_book_latency_distribution.csv");
+
+    //return 0;
+
     int eal_argc = rte_eal_init(argc, argv);
     if (eal_argc < 0) {
         throw std::runtime_error("EAL init failed");
@@ -100,31 +148,27 @@ int main(int argc, char** argv) {
     argc -= eal_argc;
     argv += eal_argc;
 
-    std::string filepath;
     std::string outdir;
 
-    if (argc != 3) {
-        std::cout << "Please specify the file to parse and an output directory" << '\n';
+    if (argc != 2) {
+        std::cout << "Please specify the output directory" << '\n';
         return 1;
     }
 
-    filepath = argv[1];
-    outdir   = argv[2];
+    outdir   = argv[1];
 
-    auto [src_buf, bytes_read] = init_benchmark(filepath);
-    const std::byte* src = src_buf.data();
-    size_t len = bytes_read;
+    SPSCQueue<OB::BestLvlChange> strategy_queue;
+    std::thread strategy_thread(strategy, std::ref(strategy_queue));
 
     //std::thread noise(allocator_noise);
 
     ITCH::ItchParser parser;
-    BenchmarkOrderBook ob_bm_handler;
-    BenchmarkParsing parsing_bm_handler;
+    ParserHandler handler(strategy_queue);
 
     rte_mbuf* bufs[64];
-
     std::ofstream out("../data/itch_out",
                   std::ios::binary | std::ios::out | std::ios::trunc);
+
     std::vector<char> buf;
     buf.reserve(1<<20);
 
@@ -135,7 +179,7 @@ int main(int argc, char** argv) {
     uint64_t msgs = 0;
     uint64_t pkts = 0;
 
-    while (!ob_bm_handler.last_message) {
+    while (!handler.last_message) {
         uint16_t n = rte_eth_rx_burst(port_id, 0, bufs, 64);
         pkts += n;
 
@@ -174,7 +218,7 @@ int main(int argc, char** argv) {
                 throw std::runtime_error("Something went wrong, pkt length doesn't match expected length");
             }
 
-            parser.parse(p, itch_len, ob_bm_handler);
+            parser.parse(p, itch_len, handler);
             total_size += itch_len;
         }
 
@@ -191,9 +235,7 @@ int main(int argc, char** argv) {
     }
 
     #ifndef PERF
-    //export_latency_distribution_csv(ob_bm_handler, outdir + "parsing_latency_distribution.csv");
-    export_latency_distribution_csv(ob_bm_handler, outdir + "parsing_and_order_book_latency_distribution.csv");
-    export_prices_csv(ob_bm_handler.prices, outdir);
+    export_latency_distribution_csv(handler, outdir + "parsing_and_order_book_latency_distribution.csv");
     #endif
 
     run_noise = false;

@@ -1,0 +1,4 @@
+/home/alderson/Projects/Mine/itch-5.0-parser/build-perf/CMakeFiles/benchmark.dir
+/home/alderson/Projects/Mine/itch-5.0-parser/build-perf/CMakeFiles/perf_bench.dir
+/home/alderson/Projects/Mine/itch-5.0-parser/build-perf/CMakeFiles/edit_cache.dir
+/home/alderson/Projects/Mine/itch-5.0-parser/build-perf/CMakeFiles/rebuild_cache.dir

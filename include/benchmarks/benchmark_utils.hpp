@@ -19,7 +19,6 @@ inline uint64_t cycles_to_ns(uint64_t cycles, uint64_t freq) {
     return (uint64_t)(num / freq);
 }
 
-
 template<typename T>
 void export_latency_distribution_csv(
     T& ob,
@@ -46,6 +45,7 @@ void export_latency_distribution_csv(
     );
 
     std::ofstream out(file_name);
+    std::cout << file_name << '\n';
     if (!out) {
         std::abort();
     }

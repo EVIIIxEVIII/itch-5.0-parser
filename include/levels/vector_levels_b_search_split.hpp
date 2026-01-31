@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <algorithm>
+#include <optional>
 #include "order_book_shared.hpp"
 
 namespace OB {
@@ -9,12 +10,12 @@ template<Side S>
 class VectorLevelBSearchSplit {
 public:
     VectorLevelBSearchSplit() {
-        prices.reserve(5000);
-        qtys.reserve(5000);
+        prices.reserve(8000);
+        qtys.reserve(8000);
     }
 
-    BestLvlChange remove(Level level);
-    BestLvlChange add(Level level);
+    std::optional<BestLvlChange> remove(Level level);
+    std::optional<BestLvlChange> add(Level level);
 
     Level best() const;
 
@@ -33,7 +34,7 @@ inline Level VectorLevelBSearchSplit<S>::best() const {
 }
 
 template<Side S>
-inline BestLvlChange VectorLevelBSearchSplit<S>::remove(Level level) {
+inline std::optional<BestLvlChange> VectorLevelBSearchSplit<S>::remove(Level level) {
     auto it = std::lower_bound(
         prices.begin(), prices.end(), level.price,
         [](uint32_t lhs, uint32_t price) {
@@ -44,12 +45,13 @@ inline BestLvlChange VectorLevelBSearchSplit<S>::remove(Level level) {
             }
         }
     );
-
     UNEXPECTED(it == prices.end() || *it != level.price, "Remove didn't find a level");
-    size_t idx = it - prices.begin();
-    bool best_changed = (prices.size() - 1) == idx;
 
+    size_t idx = it - prices.begin();
     UNEXPECTED(level.qty > qtys[idx], "Remove underflow");
+
+    auto qty_bef = qtys.back();
+    auto price_bef = prices.back();
 
     qtys[idx] -= level.qty;
     if (qtys[idx] == 0) {
@@ -57,17 +59,26 @@ inline BestLvlChange VectorLevelBSearchSplit<S>::remove(Level level) {
         qtys.erase(qtys.begin() + idx);
     }
 
-    return best_changed ? BestLvlChange{
-        .qty = qtys.back(),
-        .price = prices.back(),
-        .side = S
-    } : BestLvlChange{}; // return empty object as "no" change
-    // no std::option used, because it provably doesn't return in registers
-    // 0 for Side is defined as Side::None
+    if (prices.empty()) {
+        return std::nullopt;
+    }
+
+    auto qty_af = qtys.back();
+    auto price_af = prices.back();
+
+    if (qty_bef != qty_af || price_bef != price_af) {
+        return std::optional{BestLvlChange {
+            .qty = qty_af,
+            .price = price_af,
+            .side = S
+        }};
+    } else {
+        return std::nullopt;
+    }
 }
 
 template<Side S>
-inline BestLvlChange VectorLevelBSearchSplit<S>::add(Level level) {
+inline std::optional<BestLvlChange> VectorLevelBSearchSplit<S>::add(Level level) {
     auto it = std::lower_bound(
         prices.begin(), prices.end(), level.price,
         [](uint32_t lhs, uint32_t price) {
@@ -80,7 +91,14 @@ inline BestLvlChange VectorLevelBSearchSplit<S>::add(Level level) {
     );
 
     size_t idx = it - prices.begin();
-    bool best_changed = idx == (prices.size() - 1);
+
+    uint64_t qty_bef = 0;
+    uint32_t price_bef = 0;
+
+    if (!prices.empty()) {
+        qty_bef = qtys.back();
+        price_bef = prices.back();
+    }
 
     if (it != prices.end() && *it == level.price) {
         qtys[idx] += level.qty;
@@ -89,13 +107,18 @@ inline BestLvlChange VectorLevelBSearchSplit<S>::add(Level level) {
         qtys.insert(qtys.begin() + idx, level.qty);
     }
 
-    return best_changed ? BestLvlChange{
-        .qty = qtys.back(),
-        .price = prices.back(),
-        .side = S
+    auto qty_af = qtys.back();
+    auto price_af = prices.back();
+
+    if (qty_bef != qty_af || price_bef != price_af) {
+        return std::optional{BestLvlChange {
+            .qty = qty_af,
+            .price = price_af,
+            .side = S
+        }};
+    } else {
+        return std::nullopt;
     }
-    : BestLvlChange{}; // same as above
 }
 
 }
-
