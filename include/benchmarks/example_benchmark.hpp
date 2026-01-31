@@ -5,12 +5,7 @@
 #include <absl/container/flat_hash_map.h>
 #include <emmintrin.h>
 #include <x86intrin.h>
-#include "levels/heap_level.hpp"
-#include "levels/btree_level.hpp"
-#include "levels/array_levels_v2.hpp"
-#include "levels/map_level.hpp"
 #include "itch_parser.hpp"
-#include "levels/vector_level_b_search.hpp"
 #include "levels/vector_levels_b_search_split.hpp"
 #include "order_book.hpp"
 
@@ -25,6 +20,7 @@ struct BenchmarkOrderBook {
     void handle(const ITCH::OrderCancel&);
     void handle(const ITCH::OrderDelete&);
     void handle(const ITCH::OrderReplace&);
+    void handle(const ITCH::SystemEvent&);
 
     void handle_after();
     void handle_before();
@@ -39,6 +35,8 @@ struct BenchmarkOrderBook {
     unsigned aux_start, aux_end;
 
     uint64_t t0;
+
+    bool last_message = false;
 
     uint32_t last_price = 0;
     std::vector<uint32_t> prices;
@@ -59,7 +57,10 @@ inline void BenchmarkOrderBook::handle_before() {
 
 inline void BenchmarkOrderBook::handle_after() {
     uint32_t best_bid = order_book.best_bid().price;
+
+    #ifdef PERF
     benchmark::DoNotOptimize(best_bid);
+    #endif
 
     #ifndef PERF
     uint64_t t1 = __rdtscp(&aux_end);
@@ -74,6 +75,14 @@ inline void BenchmarkOrderBook::handle_after() {
         latency_distribution[cycles]++;
     }
     #endif
+}
+
+inline void BenchmarkOrderBook::handle(const ITCH::SystemEvent& msg) {
+    if (msg.event_code == 'C') {
+        touched = true;
+        last_message = true;
+        total_messages++;
+    }
 }
 
 inline void BenchmarkOrderBook::handle(const ITCH::StockDirectory& msg) {

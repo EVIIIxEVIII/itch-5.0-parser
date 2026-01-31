@@ -10,16 +10,19 @@ set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 
 find_package(absl REQUIRED)
 find_package(benchmark REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(DPDK REQUIRED libdpdk)
 
 add_library(itch_parser INTERFACE)
 target_include_directories(itch_parser INTERFACE include)
 target_link_libraries(itch_parser INTERFACE absl::flat_hash_map)
 target_link_libraries(itch_parser INTERFACE benchmark::benchmark pthread)
 
-add_executable(benchmark src/main.cpp)
+add_executable(benchmark src/main.cpp src/benchmarks/benchmark_utils.cpp)
 target_link_libraries(benchmark PRIVATE itch_parser)
+target_link_libraries(benchmark PRIVATE ${DPDK_LIBRARIES})
 
-add_executable(perf_bench src/main.cpp)
+add_executable(perf_bench src/main.cpp src/benchmarks/benchmark_utils.cpp)
 target_link_libraries(perf_bench PRIVATE itch_parser)
+target_link_libraries(perf_bench PRIVATE ${DPDK_LIBRARIES})
 target_compile_definitions(perf_bench PRIVATE PERF)
-
